@@ -24,7 +24,19 @@ class MNISTClassifier(nn.Module):
     
     def __init__(self,num_epochs,batch_size,criterion=nn.CrossEntropyLoss(),num_classes=10):
         """
-        Initialize a PyTorch Convolution network model given a loss function, optimizer and other parameters for training
+        Initialize a PyTorch Convolution network model given a loss function, and other parameters for training
+
+        Params:
+        ------
+
+        num_epochs:       An integer specifying number of replicates to train,
+                          the neural network with the lowest loss is returned.
+        batche_size:      An integer specifying the number of batches
+                          to do (default 1000)
+        criterion:        Loss function (default nn.CrossEntropyLoss())
+
+        num_classes:      Number of classes in target column
+        
         
         """
         super(MNISTClassifier, self).__init__()
@@ -139,6 +151,14 @@ class MNISTClassifier(nn.Module):
     
 
     def compute_training(self,data,tolerance=1e-5):
+        """
+        Params:
+        ------
+
+        data:             Train data
+        tolerance:        A float describing the tolerance/convergence criterion
+                          for minimum relative change in loss (default 1e-6)
+        """
         best_final_loss=1e10
         total_step=len(data)
         old_loss=1e6
