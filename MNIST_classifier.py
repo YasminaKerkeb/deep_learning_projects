@@ -100,11 +100,11 @@ class MNISTClassifier(nn.Module):
         return {'val_loss': loss}
 
     
-    def compute_validation(self,val_data,batch_idx):
+    def compute_validation(self,val_data):
         with torch.no_grad():
                 val_loss = []
-                for test_batch in val_data:
-                    val_step=self.validation_step(val_data,batch_idx)
+                for (i,val_batch) in enumerate(val_data):
+                    val_step=self.validation_step(val_batch,i)
                     val_loss.append(val_step["val_loss"])
 
                 val_loss = torch.mean(torch.tensor(val_loss))
