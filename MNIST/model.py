@@ -8,12 +8,14 @@ from torch.utils.data import DataLoader, TensorDataset, random_split
 from torchvision import datasets, transforms
 from torchvision.datasets import MNIST
 import os
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 #Global values
 
 COLOR_LIST = ['tab:orange', 'tab:green', 'tab:purple', 'tab:brown', 'tab:pink',
               'tab:gray', 'tab:olive', 'tab:cyan', 'tab:red', 'tab:blue']
-
+GPU_DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class MNISTClassifier(nn.Module):
     
@@ -84,21 +86,11 @@ class MNISTClassifier(nn.Module):
     def test_dataloader(self,data,**kwargs):
         return DataLoader(data, batch_size=self.batch_size,**kwargs)
 
-    def prepare_data(self):
-        # transforms for images
-        #The mean and variance are calculated beforehand (0.1305,0.3081)
-        transform=transforms.Compose([transforms.ToTensor(), 
-                                    transforms.Normalize((0.1305,), (0.3081,))])
-        
-        # prepare transforms standard to MNIST
-        self.mnist_train = MNIST(os.getcwd(), train=True, download=True, transform=transform)
-        self.mnist_test = MNIST(os.getcwd(), train=False, download=True, transform=transform)
-        
-
-        return self.mnist_train, self.mnist_test
 
     def training_step(self, train_batch,batch_idx):
         x, y = train_batch
+        x = x.to(GPU_DEVICE)
+        y = y.to(GPU_DEVICE)
         logits = self.forward(x)
         loss = self.criterion(logits, y)
 
@@ -107,24 +99,13 @@ class MNISTClassifier(nn.Module):
 
     def validation_step(self, val_batch,batch_idx):
         x, y = val_batch
+        x = x.to(GPU_DEVICE)
+        y = y.to(GPU_DEVICE)
         logits = self.forward(x)
         loss = self.criterion(logits, y)
-        return {'val_loss': loss}
-
-    
-    def compute_validation(self,val_data):
-        self.eval()
-        with torch.no_grad():
-                val_loss = []
-                for (i,val_batch) in enumerate(val_data):
-                    val_step=self.validation_step(val_batch,i)
-                    val_loss.append(val_step["val_loss"])
-
-                val_loss = torch.mean(torch.tensor(val_loss))
-
-        return val_loss.item()
-
-
+        return {'val_loss': loss,
+                'y_pred':logits,
+                'y_true':y}
 
     def set_optimizer(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
@@ -207,6 +188,25 @@ class MNISTClassifier(nn.Module):
 
         
         return best_model, best_final_loss, best_learning_curve
+
+    def compute_validation(self,val_data):
+        self.eval()
+        with torch.no_grad():
+                val_loss = []
+                y_true=[]
+                y_pred=[]
+                for (i,val_batch) in enumerate(val_data):
+                    val_step=self.validation_step(val_batch,i)
+                    val_loss.append(val_step["val_loss"])
+                    y_true.append(val_step["y_true"])
+                    y_pred.append(val_step["y_pred"])
+                val_loss = torch.stack(val_loss).mean()
+                y_pred=torch.cat(y_pred)
+                y_true=torch.cat(y_true)
+
+        return val_loss.item(), y_true, y_pred
+
+
 
                 
     

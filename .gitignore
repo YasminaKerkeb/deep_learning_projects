@@ -3,4 +3,6 @@ __pycache__
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 MNIST/MNIST
+MNIST/FashionMNIST
+Medical_diagnosis/data
 
