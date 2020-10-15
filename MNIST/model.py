@@ -142,7 +142,7 @@ class MNISTClassifier(nn.Module):
         self.apply(self.init_weights)
     
 
-    def compute_training(self,train_data,val_data,tolerance=1e-5):
+    def compute_training(self,train_data,val_data,tolerance=1e-4):
         """
         Params:
         ------
