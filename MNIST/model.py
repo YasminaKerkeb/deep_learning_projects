@@ -74,17 +74,16 @@ class MNISTClassifier(nn.Module):
         x=self.fc_1(x)
         #Fully connected layer 2
         x=self.fc_2(x)
-        # probability distribution over labels
-        x = torch.log_softmax(x, dim=1)
+        # We don't need to add softmax activation since it's built in nn.CrossEntropy
 
         return x
 
     def train_dataloader(self,data,**kwargs):
-        return DataLoader(data, batch_size=self.batch_size,**kwargs)
+        return DataLoader(data, shuffle=True,batch_size=self.batch_size,**kwargs)
 
 
     def test_dataloader(self,data,**kwargs):
-        return DataLoader(data, batch_size=self.batch_size,**kwargs)
+        return DataLoader(data, shuffle=False,batch_size=self.batch_size,**kwargs)
 
 
     def training_step(self, train_batch,batch_idx):
@@ -112,13 +111,24 @@ class MNISTClassifier(nn.Module):
         return optimizer
 
     @staticmethod
-    def plot_learning_curve(learning_curve,ax,label,color):
+    def plot_learning_curve(learning_curve,ax,color):
         h, = ax.plot(learning_curve, color=color)
-        h.set_label(label)
         ax.set_xlabel('Iterations')
         ax.set_xlim((0, len(learning_curve)))
         ax.set_ylabel('Loss')
         ax.set_title('Learning curves')
+        ax.legend()
+
+    @staticmethod
+    def plot_train_val_loss(losses,ax):
+        train_loss, val_loss=losses
+        epochs=range(1,len(train_loss)+1)
+        ax.plot(epochs,train_loss, color='tab:red', label='Train loss')
+        ax.plot(epochs,val_loss, color='tab:blue',label='Validation loss')
+        ax.set_xlabel('Epochs')
+        ax.set_ylabel('Loss')
+        ax.set_title('Train and Validation Loss')
+        ax.legend()
 
     @staticmethod
     def init_weights(m):
@@ -132,7 +142,7 @@ class MNISTClassifier(nn.Module):
         self.apply(self.init_weights)
     
 
-    def compute_training(self,data,tolerance=1e-5):
+    def compute_training(self,train_data,val_data,tolerance=1e-5):
         """
         Params:
         ------
@@ -142,8 +152,10 @@ class MNISTClassifier(nn.Module):
                           for minimum relative change in loss (default 1e-6)
         """
         best_final_loss=1e10
-        total_step=len(data)
+        total_step=len(train_data)
         old_loss=1e6
+        epoch_training_loss=[]
+        epoch_val_loss=[]
         for epoch in range(self.num_epochs):
             #Activate train mode
             self.train()
@@ -151,12 +163,11 @@ class MNISTClassifier(nn.Module):
             self.weight_initializer()
             #Store every loss to get the learning curve
             learning_curve = [] 
-            for (i,train_batch) in enumerate(data):
+            for (i,train_batch) in enumerate(train_data):
                 # Compute forward propagation
                 train_step=self.training_step(train_batch,i)
                 loss_value = train_step["log"]["train_loss"]
                 learning_curve.append(loss_value)
-
                 # Display Loss
                 if (i + 1) % 100 == 0:
                     print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'
@@ -174,20 +185,23 @@ class MNISTClassifier(nn.Module):
                 self.set_optimizer().step()
                 self.set_optimizer().zero_grad()
 
+            #Print final training loss
+            mean_epoch_training_loss=torch.stack(learning_curve).mean()
+            epoch_training_loss.append(mean_epoch_training_loss.item())
             # Validation at the end of an epoch
-            #self.eval()
-            #val_loss=self.compute_validation(self.mnist_val,i)
-            #print('val_loss: ', val_loss)
-
-            
-            if loss_value < best_final_loss: 
+            self.eval()
+            val_loss,_,_=self.compute_validation(val_data)
+            epoch_val_loss.append(val_loss)
+            print('\nEpoch validation loss: {}\n'.format(val_loss))
+            if val_loss < best_final_loss: 
                 best_model = self.state_dict()
-                best_final_loss = loss_value
+                best_final_loss = val_loss
                 best_learning_curve = learning_curve
-                
-
+            
+        #Store training and validation losses across epochs
+        epochs_losses=[epoch_training_loss,epoch_val_loss]
         
-        return best_model, best_final_loss, best_learning_curve
+        return best_model, best_final_loss, best_learning_curve, epochs_losses
 
     def compute_validation(self,val_data):
         self.eval()
