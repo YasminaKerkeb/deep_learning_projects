@@ -4,5 +4,5 @@ __pycache__
 */.ipynb_checkpoints/*
 MNIST/MNIST
 MNIST/FashionMNIST
-Medical_diagnosis/data
+Stanford_MRNet/data
 MNIST/train_Fashion_MNIST.ipynb
