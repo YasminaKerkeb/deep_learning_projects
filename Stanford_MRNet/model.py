@@ -36,17 +36,14 @@ class StanfordMRNet(nn.Module):
                           the neural network with the lowest loss is returned.
         batche_size:      An integer specifying the number of batches
                           to do (default 1000)
-        criterion:        Loss function (default nn.CrossEntropyLoss())
-
-        num_classes:      Number of classes in target column
+        criterion:        Loss function (default nn.BCEWithLogitsLoss())
         
         
         """
         super(StanfordMRNet, self).__init__()
         self.criterion=criterion
         self.num_epochs=num_epochs
-        self.batch_size=batch_size
-        # mnist images are (1, 28, 28) (channels, width, height) 
+        self.batch_size=batch_size 
         self.feature_extractor = models.alexnet(pretrained=True)
         self.avg_pooling = nn.AdaptiveAvgPool2d(1)
         self.fc = nn.Linear(256, 1)
@@ -65,8 +62,8 @@ class StanfordMRNet(nn.Module):
         flattened_output=torch.flatten(pooled_features,1,3)
         #Max pooling over the flattenned vector
         pooled_output=torch.max(flattened_output,0, keepdim=True)[0]
+        # We don't need to add sigmoid activation since it's built in nn.BCEWithLogits()
         final_output=self.fc(pooled_output)
-        # We don't need to add softmax activation since it's built in nn.CrossEntropy
 
         return final_output
 
