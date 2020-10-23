@@ -18,14 +18,14 @@ COLOR_LIST = ['tab:orange', 'tab:green', 'tab:purple', 'tab:brown', 'tab:pink',
               'tab:gray', 'tab:olive', 'tab:cyan', 'tab:red', 'tab:blue']
 GPU_DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-class MRNet(nn.Module):
+class StanfordMRNet(nn.Module):
     
     """
     Base class for MNIST Classifier model.
         
     """
     
-    def __init__(self,num_epochs,batch_size,criterion=nn.CrossEntropyLoss(),num_classes=10):
+    def __init__(self,num_epochs,batch_size,criterion=nn.BCEWithLogitsLoss()):
         """
         Initialize a PyTorch Convolution network model given a loss function, and other parameters for training
 
@@ -42,7 +42,7 @@ class MRNet(nn.Module):
         
         
         """
-        super(MRNet, self).__init__()
+        super(StanfordMRNet, self).__init__()
         self.criterion=criterion
         self.num_epochs=num_epochs
         self.batch_size=batch_size
@@ -62,13 +62,13 @@ class MRNet(nn.Module):
         #Average Pooling
         pooled_features=self.avg_pooling(extracted_features)
         #Flattenning the vectir
-        flattened_output=torch.flatten(pooled_features,0,2)
+        flattened_output=torch.flatten(pooled_features,1,3)
         #Max pooling over the flattenned vector
-        x=torch.max(flattened_output)
-        x=self.fc(x)
+        pooled_output=torch.max(flattened_output,0, keepdim=True)[0]
+        final_output=self.fc(pooled_output)
         # We don't need to add softmax activation since it's built in nn.CrossEntropy
 
-        return x
+        return final_output
 
     def train_dataloader(self,data,**kwargs):
         return DataLoader(data, shuffle=True,batch_size=self.batch_size,**kwargs)
