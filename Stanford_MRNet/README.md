@@ -19,7 +19,7 @@ It contains 1370 knee MRI exams performed at Stanford University Medical Center 
 # Model architecture
 
 
-![Screenshot](images/architecture.png)
+![Screenshot](images/architecture.PNG)
 
 
 The model takes as input a series of MRI scans that are passed through a CNN-model to produce a classification prediction. Features of each slice are extracted using an AlexNet and a Max pooling is performed to combine them. It is finally passed to a fully-connected later to output a single probability
