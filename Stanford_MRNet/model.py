@@ -67,12 +67,6 @@ class StanfordMRNet(nn.Module):
 
         return final_output
 
-    def train_dataloader(self,data,**kwargs):
-        return DataLoader(data, shuffle=True,batch_size=self.batch_size,**kwargs)
-
-
-    def test_dataloader(self,data,**kwargs):
-        return DataLoader(data, shuffle=False,batch_size=self.batch_size,**kwargs)
 
 
     def training_step(self, train_batch,batch_idx):
